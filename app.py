@@ -20,23 +20,26 @@ with st.sidebar:
         st.subheader(f"Ship {i + 1}")
         name = st.text_input(f"Ship Name {i + 1}", value=f"Ship-{i + 1}", key=f"name_{i}")
         arrival_date = st.date_input(f"Arrival Date {i + 1}", key=f"date_{i}")
+        arrival_time = st.time_input(f"Arrival Time {i + 1}", key=f"time_{i}")
         service_duration = st.number_input(f"Service Duration (hrs) {i + 1}", min_value=1, value=2, key=f"duration_{i}")
+        container_count = st.number_input(f"Container Count (max 5000) {i + 1}", min_value=0, max_value=5000, value=1000, step=100, key=f"containers_{i}")
 
         ships.append({
             "name": name,
-            "arrival_date": arrival_date,
-            "service_duration": service_duration
+            "arrival_datetime": datetime.combine(arrival_date, arrival_time),
+            "service_duration": service_duration,
+            "containers": container_count
         })
 
 if st.button("Calculate Schedule"):
     st.subheader("📋 Schedule Results")
 
-    ships_sorted = sorted(ships, key=lambda x: x["arrival_date"])
+    ships_sorted = sorted(ships, key=lambda x: x["arrival_datetime"])
     schedule = []
     berth_end_times = [datetime.combine(date.today(), datetime.min.time()) for _ in range(int(num_berths))]
 
     for ship in ships_sorted:
-        ship_arrival = datetime.combine(ship["arrival_date"], datetime.min.time())
+        ship_arrival = ship["arrival_datetime"]
         assigned_berth = berth_end_times.index(min(berth_end_times))
 
         start_time = max(ship_arrival, berth_end_times[assigned_berth])
@@ -48,7 +51,8 @@ if st.button("Calculate Schedule"):
             "Ship": ship["name"],
             "Berth": f"Berth {assigned_berth + 1}",
             "Start": start_time,
-            "End": end_time
+            "End": end_time,
+            "Containers": ship["containers"]
         })
 
     st.write("### 🗓 Final Schedule Table")
@@ -56,7 +60,8 @@ if st.button("Calculate Schedule"):
         "Ship": s["Ship"],
         "Berth": s["Berth"],
         "Start": s["Start"].strftime("%Y-%m-%d %H:%M"),
-        "End": s["End"].strftime("%Y-%m-%d %H:%M")
+        "End": s["End"].strftime("%Y-%m-%d %H:%M"),
+        "Containers": s["Containers"]
     } for s in schedule])
 
     st.write("### 📊 Gantt Chart")
